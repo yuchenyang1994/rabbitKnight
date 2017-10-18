@@ -1,0 +1,12 @@
+hash: 8c40c48f590e9580ddcbd00c210be577f907080d20fa99a66e197483b455692a
+updated: 2017-10-19T03:22:03.80088875+08:00
+imports:
+- name: github.com/gin-gonic/gin
+  version: b8b68314faa067acae5b17c828127b04af51ebe2
+- name: github.com/satori/go.uuid
+  version: 879c5887cd475cd7864858769793b2ceb0d44feb
+- name: github.com/streadway/amqp
+  version: 7db842394ca79f338f781d47bc59115f44adb20b
+- name: gopkg.in/yaml.v2
+  version: eb3733d160e74a9c7e442f435eb3bea458e1d19f
+testImports: []
