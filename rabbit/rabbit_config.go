@@ -18,33 +18,32 @@ type ProjectsConfig struct {
 
 // ProjectConfig list queue configs 批量配置时的配置文件
 type ProjectConfig struct {
-	Name                string              `json:"name"`           // 项目名称
-	QueuesDefaultConfig QueuesDefaultConfig `json:"queues_default"` // 默认配置
-	Queues              []QueueConfig       `json:"queues"`         // 队列配置
+	Name                string              `yaml:"name"`           // 项目名称
+	QueuesDefaultConfig QueuesDefaultConfig `yaml:"queues_default"` // 默认配置
+	Queues              []QueueConfig       `yaml:"queues"`         // 队列配置
 }
 
 // QueuesDefaultConfig 队列默认配置
 type QueuesDefaultConfig struct {
-	NotifyBase      string `json:"notifyBase"` // notyfy Host
-	NotifyMethod    string `json:"notifyMethod"`
-	NotifyTimeout   int    `json:"notifyTimeout"`   // 全局过期时间
-	RetryTimes      int    `json:"retryTimes"`      // 重试时间
-	RetryDuration   int    `json:"retryDuration"`   // 重试次数
-	BindingExchange string `json:"bindingExchange"` // 绑定RabbbitMqExchange
+	NotifyBase      string `yaml:"notifyBase"` // notyfy Host
+	NotifyMethod    string `yaml:"notifyMethod"`
+	NotifyTimeout   int    `yaml:"notifyTimeout"`   // 全局过期时间
+	RetryTimes      int    `yaml:"retryTimes"`      // 重试时间
+	RetryDuration   int    `yaml:"retryDuration"`   // 重试次数
+	BindingExchange string `yaml:"bindingExchange"` // 绑定RabbbitMqExchange
 }
 
 // QueueConfig 单独队列设置
 type QueueConfig struct {
-	QueueName       string   `json:"queueName"`
-	NotifyMethod    string   `json:"notifyMethod"`
-	RpcFunc         string   `json:"rpcFunc"`
-	RpcArgs         string   `jsonL"rpcArgs"`
-	RoutingKey      []string `json:"routingKey"`
-	NotifyPath      string   `json:"notifyPath"`
-	NotifyTimeout   int      `json:"notifyTimeout"`
-	RetryTimes      int      `json:"retryTimes"`
-	RetryDuration   int      `json:"retryDuration"`
-	BindingExchange string   `json:"bindingExchange"`
+	QueueName       string   `yaml:"queueName"`
+	NotifyMethod    string   `yaml:"notifyMethod"`
+	RpcFunc         string   `yaml:"rpcFunc"`
+	RoutingKey      []string `yaml:"routingKey"`
+	NotifyPath      string   `yaml:"notifyPath"`
+	NotifyTimeout   int      `yaml:"notifyTimeout"`
+	RetryTimes      int      `yaml:"retryTimes"`
+	RetryDuration   int      `yaml:"retryDuration"`
+	BindingExchange string   `yaml:"bindingExchange"`
 	project         *ProjectConfig
 }
 

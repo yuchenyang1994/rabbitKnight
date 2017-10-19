@@ -1,8 +1,10 @@
-hash: 8c40c48f590e9580ddcbd00c210be577f907080d20fa99a66e197483b455692a
-updated: 2017-10-19T03:22:03.80088875+08:00
+hash: e40d51b50a98c3ae5c94076541ae195da66bfafe54a345e293618d9e63ea1f3a
+updated: 2017-10-19T16:23:33.288901861+08:00
 imports:
 - name: github.com/gin-gonic/gin
   version: b8b68314faa067acae5b17c828127b04af51ebe2
+- name: github.com/gorilla/websocket
+  version: ea4d1f681babbce9545c9c5f3d5194a789c89f5b
 - name: github.com/satori/go.uuid
   version: 879c5887cd475cd7864858769793b2ceb0d44feb
 - name: github.com/streadway/amqp
