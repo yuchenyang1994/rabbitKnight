@@ -1,4 +1,4 @@
-package: github.com/rabbitKnight
+package: rabbitKnight
 import:
 - package: github.com/streadway/amqp
 - package: gopkg.in/yaml.v2
@@ -7,3 +7,4 @@ import:
 - package: github.com/gin-gonic/gin
 - package: github.com/gorilla/websocket
   version: ~1.2.0
+- package: github.com/ybbus/jsonrpc
