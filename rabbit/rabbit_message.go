@@ -2,25 +2,34 @@ package rabbit
 
 import (
 	"log"
-	"net/http"
-	"time"
+	"rabbitKnight/utils"
 
 	"github.com/streadway/amqp"
 )
 
-type NotifyResponse int
+// NotifyResponse ...
+type NotifyResponse bool
 
 const (
-	NotifySuccess = 1
-	NotifyFailure = 0
+	NotifySuccess = true
+	NotifyFailure = false
 )
 
+// Message ....
 type Message struct {
-	queueConfig    QueueConfig
+	queueConfig    QueueConfig    // configs
 	amqpDelivery   *amqp.Delivery // message read from rabbitmq
-	notifyResponse NotifyResponse // notify result from callback url
+	notifyResponse NotifyResponse
+	notifyer       KnightNotifyer
 }
 
+// NewKnightMessage Create an Message
+func NewKnightMessage(queueConfig QueueConfig, amqpDelivery *amqp.Delivery, notifyer KnightNotifyer) Message {
+	msg := Message{queueConfig: queueConfig, amqpDelivery: amqpDelivery, notifyer: notifyer}
+	return msg
+}
+
+// CurrentMessageRetries ...
 func (m Message) CurrentMessageRetries() int {
 	msg := m.amqpDelivery
 
@@ -45,16 +54,11 @@ func (m Message) CurrentMessageRetries() int {
 	return 0
 }
 
-func (m *Message) Notify(client *http.Client) *Message {
-	qc := m.queueConfig
+// Notify .....
+func (m *Message) Notify() *Message {
 	msg := m.amqpDelivery
-
-	client.Timeout = time.Duration(qc.NotifyTimeoutWithDefault()) * time.Second
-	statusCode := notifyUrl(client, qc.NotifyUrl(), msg.Body)
-
-	m.Printf("notify url %s, result: %d", qc.NotifyUrl(), statusCode)
-
-	if statusCode == 200 || statusCode == 201 {
+	ok := m.notifyer.NotifyConsumer(msg.Body)
+	if ok {
 		m.notifyResponse = NotifySuccess
 	} else {
 		m.notifyResponse = NotifyFailure
@@ -63,48 +67,55 @@ func (m *Message) Notify(client *http.Client) *Message {
 	return m
 }
 
+// IsMaxRetry ....
 func (m Message) IsMaxRetry() bool {
 	retries := m.CurrentMessageRetries()
 	maxRetries := m.queueConfig.RetryTimesWithDefault()
 	return retries >= maxRetries
 }
 
+// IsNotifySuccess ...
 func (m Message) IsNotifySuccess() bool {
 	return m.notifyResponse == NotifySuccess
 }
 
+// Ack ...
 func (m Message) Ack() error {
 	m.Printf("acker: ack message")
 	err := m.amqpDelivery.Ack(false)
-	LogOnError(err)
+	utils.LogOnError(err)
 	return err
 }
 
+// Reject ...
 func (m Message) Reject() error {
 	m.Printf("acker: reject message")
 	err := m.amqpDelivery.Reject(false)
-	LogOnError(err)
+	utils.LogOnError(err)
 	return err
 }
 
+// Republish ....
 func (m Message) Republish(out chan<- Message) error {
 	m.Printf("acker: ERROR republish message")
 	out <- m
 	err := m.amqpDelivery.Ack(false)
-	LogOnError(err)
+	utils.LogOnError(err)
 	return err
 }
 
+// CloneAndPublish ...
 func (m Message) CloneAndPublish(channel *amqp.Channel) error {
 	msg := m.amqpDelivery
 	qc := m.queueConfig
 
 	errMsg := cloneToPublishMsg(msg)
 	err := channel.Publish(qc.ErrorExchangeName(), msg.RoutingKey, false, false, *errMsg)
-	LogOnError(err)
+	utils.LogOnError(err)
 	return err
 }
 
+// Printf ...
 func (m Message) Printf(v ...interface{}) {
 	msg := m.amqpDelivery
 

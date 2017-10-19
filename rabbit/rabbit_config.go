@@ -1,7 +1,9 @@
 package rabbit
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"strings"
 
@@ -9,6 +11,10 @@ import (
 
 	"github.com/streadway/amqp"
 )
+
+type ProjectsConfig struct {
+	Projects []ProjectConfig `json:"projects"`
+}
 
 // ProjectConfig list queue configs 批量配置时的配置文件
 type ProjectConfig struct {
@@ -19,24 +25,27 @@ type ProjectConfig struct {
 
 // QueuesDefaultConfig 队列默认配置
 type QueuesDefaultConfig struct {
-	NotifyBase      string `json:"notify_base"`      // notyfy Host
-	NotifyTimeout   int    `json:"notify_timeout"`   // 全局过期时间
-	RetryTimes      int    `json:"retry_times"`      // 重试时间
-	RetryDuration   int    `json:"retry_duration"`   // 重试次数
-	BindingExchange string `json:"binding_exchange"` // 绑定RabbbitMqExchange
+	NotifyBase      string `json:"notifyBase"` // notyfy Host
+	NotifyMethod    string `json:"notifyMethod"`
+	NotifyTimeout   int    `json:"notifyTimeout"`   // 全局过期时间
+	RetryTimes      int    `json:"retryTimes"`      // 重试时间
+	RetryDuration   int    `json:"retryDuration"`   // 重试次数
+	BindingExchange string `json:"bindingExchange"` // 绑定RabbbitMqExchange
 }
 
 // QueueConfig 单独队列设置
 type QueueConfig struct {
-	QueueName       string   `json:"queue_name"`
-	RoutingKey      []string `json:"routing_key"`
-	NotifyPath      string   `json:"notify_path"`
-	NotifyTimeout   int      `json:"notify_timeout"`
-	RetryTimes      int      `json:"retry_times"`
-	RetryDuration   int      `json:"retry_duration"`
-	BindingExchange string   `json:"binding_exchange"`
-
-	project *ProjectConfig
+	QueueName       string   `json:"queueName"`
+	NotifyMethod    string   `json:"notifyMethod"`
+	RpcFunc         string   `json:"rpcFunc"`
+	RpcArgs         string   `jsonL"rpcArgs"`
+	RoutingKey      []string `json:"routingKey"`
+	NotifyPath      string   `json:"notifyPath"`
+	NotifyTimeout   int      `json:"notifyTimeout"`
+	RetryTimes      int      `json:"retryTimes"`
+	RetryDuration   int      `json:"retryDuration"`
+	BindingExchange string   `json:"bindingExchange"`
+	project         *ProjectConfig
 }
 
 func (qc QueueConfig) WorkerQueueName() string {
@@ -58,10 +67,15 @@ func (qc QueueConfig) ErrorExchangeName() string {
 	return fmt.Sprintf("%s-error", qc.QueueName)
 }
 func (qc QueueConfig) WorkerExchangeName() string {
-	if qc.BindingExchange == "" {
-		return qc.project.QueuesDefaultConfig.BindingExchange
-	}
 	return qc.BindingExchange
+}
+
+func (qc QueueConfig) GetNotifyMethod() string {
+	if qc.NotifyMethod == "" {
+		return qc.project.QueuesDefaultConfig.NotifyMethod
+	} else {
+		return qc.NotifyMethod
+	}
 }
 
 func (qc QueueConfig) NotifyUrl() string {
@@ -148,4 +162,30 @@ func (qc QueueConfig) DeclareQueue(channel *amqp.Channel) {
 	// 最后，绑定工作队列 和 requeue Exchange
 	err = channel.QueueBind(qc.WorkerQueueName(), "#", qc.RequeueExchangeName(), false, nil)
 	utils.PanicOnError(err)
+}
+
+// LoadQueuesConfig ....
+func LoadQueuesConfig(configFileName string, allQueues []*QueueConfig) []*QueueConfig {
+	configFile, err := ioutil.ReadFile(configFileName)
+	utils.PanicOnError(err)
+
+	projectsConfig := ProjectsConfig{}
+	err = json.Unmarshal(configFile, &projectsConfig)
+	utils.PanicOnError(err)
+	log.Printf("find config: %v", projectsConfig)
+
+	projects := projectsConfig.Projects
+	for i, project := range projects {
+		log.Printf("find project: %s", project.Name)
+
+		queues := projects[i].Queues
+		for j, queue := range queues {
+			log.Printf("find queue: %v", queue)
+
+			queues[j].project = &projects[i]
+			allQueues = append(allQueues, &queues[j])
+		}
+	}
+
+	return allQueues
 }
