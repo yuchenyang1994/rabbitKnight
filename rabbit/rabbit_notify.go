@@ -8,6 +8,7 @@ import (
 	"bytes"
 
 	"github.com/streadway/amqp"
+	"github.com/ybbus/jsonrpc"
 )
 
 // KnightNotifyer NotyfiConsumer
@@ -77,6 +78,29 @@ func (notifyer *ApiNotifyer) NotifyConsumer(body []byte) bool {
 	}
 	defer response.Body.Close()
 	if response.StatusCode == 200 {
+		return true
+	}
+	return false
+}
+
+// NewApiNotiFyer crate Jsonrpc Notify
+func NewJSONRPCNotifyer(queueConfig QueueConfig, client *http.Client) JsonRpcNotifyer {
+	n := JsonRpcNotifyer{httpClient: client, queueConfig: queueConfig}
+	return n
+}
+
+// JsonRpcNotifyer ...
+type JsonRpcNotifyer struct {
+	httpClient  *http.Client // http client
+	queueConfig QueueConfig
+}
+
+// NotifyConsumer JsonRpcNotifyer
+func (notifyer *JsonRpcNotifyer) NotifyConsumer(body []byte) bool {
+	rpcClient := jsonrpc.NewRPCClient(notifyer.queueConfig.NotifyUrl())
+	rpcClient.SetHTTPClient(notifyer.httpClient)
+	err := rpcClient.Notification(notifyer.queueConfig.RpcFunc, body)
+	if err == nil {
 		return true
 	}
 	return false

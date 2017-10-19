@@ -64,6 +64,11 @@ func (man *RabbitKnightMan) receiveMessage(done <-chan struct{}) <-chan Message 
 					msg.MessageId = fmt.Sprintf("%s", uuid.NewV4())
 					client := newHttpClient(HttpMaxIdleConns, HttpMaxIdleConnsPerHost, HttpIdleConnTimeout)
 					client.Timeout = time.Duration(qc.NotifyTimeoutWithDefault()) * time.Second
+					if qc.GetNotifyMethod() == "RPC" {
+						notifyer := NewJSONRPCNotifyer(qc, client)
+						message := NewKnightMessage(qc, &msg, &notifyer)
+						out <- message
+					}
 					notifyer := NewApiNotiFyer(qc, client)
 					message := NewKnightMessage(qc, &msg, &notifyer)
 					out <- message
@@ -110,7 +115,7 @@ func (man *RabbitKnightMan) workMessage(in <-chan Message) <-chan Message {
 	}()
 	go func() {
 		wg.Wait()
-		log.Printf("all worker is done", "closing channel")
+		log.Println("all worker is done", "closing channel")
 		close(out)
 	}()
 	return out
