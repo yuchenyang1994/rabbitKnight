@@ -1,7 +1,6 @@
 package rabbit
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -10,6 +9,7 @@ import (
 	"rabbitKnight/utils"
 
 	"github.com/streadway/amqp"
+	yaml "gopkg.in/yaml.v2"
 )
 
 type ProjectsConfig struct {
@@ -169,7 +169,7 @@ func LoadQueuesConfig(configFileName string, allQueues []*QueueConfig) []*QueueC
 	utils.PanicOnError(err)
 
 	projectsConfig := ProjectsConfig{}
-	err = json.Unmarshal(configFile, &projectsConfig)
+	err = yaml.Unmarshal(configFile, &projectsConfig)
 	utils.PanicOnError(err)
 	log.Printf("find config: %v", projectsConfig)
 

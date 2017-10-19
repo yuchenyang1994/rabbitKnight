@@ -8,8 +8,8 @@ import (
 	"github.com/streadway/amqp"
 )
 
-func setupChannel() (*amqp.Connection, *amqp.Channel, error) {
-	url := os.Getenv("AMQP_URL")
+func setupChannel(amqpUrl string) (*amqp.Connection, *amqp.Channel, error) {
+	url := os.Getenv(amqpUrl)
 
 	conn, err := amqp.Dial(url)
 	if err != nil {

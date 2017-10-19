@@ -27,7 +27,8 @@ const (
 )
 
 type RabbitKnightMan struct {
-	queues []*QueueConfig
+	queues  []*QueueConfig
+	amqpUrl string // Rabbitmq 的配置
 }
 
 // receiveMessage ...
@@ -38,7 +39,7 @@ func (man *RabbitKnightMan) receiveMessage(done <-chan struct{}) <-chan Message 
 		defer wg.Done()
 	RECONNECT:
 		for {
-			_, channel, err := setupChannel()
+			_, channel, err := setupChannel(man.amqpUrl)
 			if err != nil {
 				utils.PanicOnError(err)
 			}
@@ -159,7 +160,7 @@ func (man *RabbitKnightMan) resendMessage(in <-chan Message) <-chan Message {
 
 	RECONNECT:
 		for {
-			conn, channel, err := setupChannel()
+			conn, channel, err := setupChannel(man.amqpUrl)
 			if err != nil {
 				utils.PanicOnError(err)
 			}
@@ -194,7 +195,7 @@ func (man *RabbitKnightMan) resendMessage(in <-chan Message) <-chan Message {
 
 // RunKnight run the watch
 func (man *RabbitKnightMan) RunKnight(done <-chan struct{}) {
-	_, channel, err := setupChannel()
+	_, channel, err := setupChannel(man.amqpUrl)
 	if err != nil {
 		utils.PanicOnError(err)
 	}
