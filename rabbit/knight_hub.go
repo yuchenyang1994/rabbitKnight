@@ -48,7 +48,7 @@ func (hub *KnightHub) Run() {
 				close(client.send)
 			}
 		case message := <-hub.broadcast:
-			log.Println(message)
+			log.Println(string(message))
 			for client := range hub.clients {
 				select {
 				case client.send <- message:

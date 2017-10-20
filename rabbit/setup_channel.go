@@ -2,16 +2,14 @@ package rabbit
 
 import (
 	"log"
-	"os"
 	"rabbitKnight/utils"
 
 	"github.com/streadway/amqp"
 )
 
 func setupChannel(amqpUrl string) (*amqp.Connection, *amqp.Channel, error) {
-	url := os.Getenv(amqpUrl)
 
-	conn, err := amqp.Dial(url)
+	conn, err := amqp.Dial(amqpUrl)
 	if err != nil {
 		utils.LogOnError(err)
 		return nil, nil, err

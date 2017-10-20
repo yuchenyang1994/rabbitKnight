@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	amqpConfig     = flag.String("mq", "127.0.0.1:5671", "rabbtmq addr")
+	amqpConfig     = flag.String("mq", "amqp://guest:guest@172.17.0.2:5672", "rabbtmq URL")
 	serverPort     = flag.String("port", ":8080", "server port")
 	configFilename = flag.String("queue_config", "./config/queue_config.yaml", "the queues config file")
 	logFileName    = flag.String("log", "", "logging file, default STDOUT")

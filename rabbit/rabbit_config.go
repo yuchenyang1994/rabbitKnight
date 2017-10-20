@@ -82,6 +82,9 @@ func (qc QueueConfig) ErrorExchangeName() string {
 	return fmt.Sprintf("%s-error", qc.QueueName)
 }
 func (qc QueueConfig) WorkerExchangeName() string {
+	if qc.BindingExchange == "" {
+		return qc.project.QueuesDefaultConfig.BindingExchange
+	}
 	return qc.BindingExchange
 }
 
@@ -130,6 +133,7 @@ func (qc QueueConfig) DeclareExchange(channel *amqp.Channel) {
 	}
 
 	for _, e := range exchanges {
+		fmt.Println(e)
 		log.Printf("declaring exchange: %s\n", e)
 
 		err := channel.ExchangeDeclare(e, "topic", true, false, false, false, nil)
@@ -186,7 +190,8 @@ func KnightConfigManagerInstance() *KnightConfigManager {
 // NewKnightConfigManager ...
 func NewKnightConfigManager(configFileName string) *KnightConfigManager {
 	once.Do(func() {
-		knightManager = &KnightConfigManager{ConfigFileName: configFileName}
+		lock := sync.RWMutex{}
+		knightManager = &KnightConfigManager{ConfigFileName: configFileName, Lock: &lock}
 	})
 	return knightManager
 }
