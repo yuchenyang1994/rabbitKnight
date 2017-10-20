@@ -32,7 +32,6 @@ func NewKnightMessage(queueConfig QueueConfig, amqpDelivery *amqp.Delivery, noti
 // CurrentMessageRetries ...
 func (m Message) CurrentMessageRetries() int {
 	msg := m.amqpDelivery
-
 	xDeathArray, ok := msg.Headers["x-death"].([]interface{})
 	if !ok {
 		m.Printf("x-death array case fail")

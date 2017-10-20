@@ -8,7 +8,7 @@ msg = json.dumps({"message":"hello,word"})
 parameters = pika.URLParameters('amqp://guest:guest@172.17.0.2:5672')
 connection = pika.BlockingConnection(parameters)
 channel = connection.channel()
-for i in range(10):
+for i in range(1):
     channel.basic_publish(
         'test_exchange',
         'test',
