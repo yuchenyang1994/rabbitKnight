@@ -9,10 +9,11 @@ import (
 
 // KnightHub the knight message hub
 type KnightHub struct {
-	Lock       *sync.RWMutex
-	ErrorMsgs  map[string][]EventMsgForJSON
-	clients    map[*KnightClient]bool
-	broadcast  chan []byte
+	Lock      *sync.RWMutex
+	ErrorMsgs map[string][]EventMsgForJSON
+	clients   map[*KnightClient]bool
+	broadcast chan []byte
+
 	register   chan *KnightClient
 	unregister chan *KnightClient
 }

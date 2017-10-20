@@ -159,10 +159,10 @@ func (man *RabbitKnightMan) ackMessage(in <-chan Message) <-chan Message {
 				man.notifyWatcher("Success", m)
 			} else if m.IsMaxRetry() {
 				m.Republish(out)
-				man.notifyWatcher("Retary", m)
+				man.notifyWatcher("Error", m)
 			} else {
 				m.Reject()
-				man.notifyWatcher("Error", m)
+				man.notifyWatcher("Reject", m)
 			}
 		}
 	}

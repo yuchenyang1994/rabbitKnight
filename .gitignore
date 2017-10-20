@@ -20,6 +20,7 @@
 run/*
 log/
 vendor/
+*.#
 
 # End of https://www.gitignore.io/api/go
 
