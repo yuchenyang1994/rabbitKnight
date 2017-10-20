@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"encoding/json"
+
 	uuid "github.com/satori/go.uuid"
 	"github.com/streadway/amqp"
 )
@@ -26,9 +28,19 @@ const (
 	HttpIdleConnTimeout     = 30  // default 90 in net/http
 )
 
+// EventMsgForJSON Watch Msg
+type EventMsgForJSON struct {
+	MsgID       string `json:"msgId"`
+	Event       string `json:"event"`
+	RabbitMsg   string `json:"rabbitMsg"`
+	ProjectName string `json:"projectName"`
+	QueueName   string `json:"queueName"`
+}
+
 type RabbitKnightMan struct {
 	queues  []*QueueConfig
 	amqpUrl string // Rabbitmq 的配置
+	hub     *KnightHub
 }
 
 // receiveMessage ...
@@ -102,6 +114,17 @@ func (man *RabbitKnightMan) workMessage(in <-chan Message) <-chan Message {
 	work := func(m Message, o chan<- Message) {
 		m.Printf("worker: received a msg, body: %s", string(m.amqpDelivery.Body))
 		defer wg.Done()
+		event := EventMsgForJSON{
+			MsgID:       m.amqpDelivery.MessageId,
+			Event:       "Notifying",
+			RabbitMsg:   string(m.amqpDelivery.Body),
+			ProjectName: m.queueConfig.project.Name,
+			QueueName:   m.queueConfig.QueueName}
+		eventJSON, err := json.Marshal(event)
+		if err != nil {
+			utils.LogOnError(err)
+		}
+		man.hub.broadcast <- eventJSON
 		m.Notify()
 		o <- m
 	}
@@ -134,10 +157,43 @@ func (man *RabbitKnightMan) ackMessage(in <-chan Message) <-chan Message {
 
 			if m.IsNotifySuccess() {
 				m.Ack()
+				event := EventMsgForJSON{
+					MsgID:       m.amqpDelivery.MessageId,
+					Event:       "Success",
+					RabbitMsg:   string(m.amqpDelivery.Body),
+					ProjectName: m.queueConfig.project.Name,
+					QueueName:   m.queueConfig.QueueName}
+				eventJSON, err := json.Marshal(event)
+				if err != nil {
+					utils.LogOnError(err)
+				}
+				man.hub.broadcast <- eventJSON
 			} else if m.IsMaxRetry() {
 				m.Republish(out)
+				event := EventMsgForJSON{
+					MsgID:       m.amqpDelivery.MessageId,
+					Event:       "Retry",
+					RabbitMsg:   string(m.amqpDelivery.Body),
+					ProjectName: m.queueConfig.project.Name,
+					QueueName:   m.queueConfig.QueueName}
+				eventJSON, err := json.Marshal(event)
+				if err != nil {
+					utils.LogOnError(err)
+				}
+				man.hub.broadcast <- eventJSON
 			} else {
 				m.Reject()
+				event := EventMsgForJSON{
+					MsgID:       m.amqpDelivery.MessageId,
+					Event:       "Reject",
+					RabbitMsg:   string(m.amqpDelivery.Body),
+					ProjectName: m.queueConfig.project.Name,
+					QueueName:   m.queueConfig.QueueName}
+				eventJSON, err := json.Marshal(event)
+				if err != nil {
+					utils.LogOnError(err)
+				}
+				man.hub.broadcast <- eventJSON
 			}
 		}
 	}

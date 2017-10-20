@@ -8,42 +8,58 @@ import (
 
 	"rabbitKnight/utils"
 
+	"sync"
+
+	"os"
+
 	"github.com/streadway/amqp"
 	yaml "gopkg.in/yaml.v2"
 )
 
+var (
+	knightManager *KnightConfigManager
+	once          sync.Once
+)
+
+// KnightConfigManager manager for mq configs
+type KnightConfigManager struct {
+	ConfigFileName string
+	Lock           *sync.RWMutex
+	Configs        *ProjectsConfig
+}
+
 type ProjectsConfig struct {
-	Projects []ProjectConfig `json:"projects"`
+	Projects []ProjectConfig `yaml:"projects" json:"projects"`
 }
 
 // ProjectConfig list queue configs 批量配置时的配置文件
 type ProjectConfig struct {
-	Name                string              `yaml:"name"`           // 项目名称
-	QueuesDefaultConfig QueuesDefaultConfig `yaml:"queues_default"` // 默认配置
-	Queues              []QueueConfig       `yaml:"queues"`         // 队列配置
+	Name                string              `yaml:"name" json:"name"`                  // 项目名称
+	QueuesDefaultConfig QueuesDefaultConfig `yaml:"queuesDefault" json:"queueDefault"` // 默认配置
+	Queues              []QueueConfig       `yaml:"queues" json:"queues"`              // 队列配置
 }
 
 // QueuesDefaultConfig 队列默认配置
 type QueuesDefaultConfig struct {
-	NotifyBase      string `yaml:"notifyBase"` // notyfy Host
-	NotifyMethod    string `yaml:"notifyMethod"`
-	NotifyTimeout   int    `yaml:"notifyTimeout"`   // 全局过期时间
-	RetryTimes      int    `yaml:"retryTimes"`      // 重试时间
-	RetryDuration   int    `yaml:"retryDuration"`   // 重试次数
-	BindingExchange string `yaml:"bindingExchange"` // 绑定RabbbitMqExchange
+	NotifyBase      string `yaml:"notifyBase" json:"notifyBase"` // notyfy Host
+	NotifyMethod    string `yaml:"notifyMethod" json:"notifyMethod"`
+	NotifyTimeout   int    `yaml:"notifyTimeout" json:"notifyTimeout"`     // 全局过期时间
+	RetryTimes      int    `yaml:"retryTimes" json:"retryTimes"`           // 重试时间
+	RetryDuration   int    `yaml:"retryDuration" json:"retryDuration"`     // 重试次数
+	BindingExchange string `yaml:"bindingExchange" json:"bindingExchange"` // 绑定RabbbitMqExchange
 }
 
 // QueueConfig 单独队列设置
 type QueueConfig struct {
-	QueueName       string   `yaml:"queueName"`
-	NotifyMethod    string   `yaml:"notifyMethod"`
-	RpcFunc         string   `yaml:"rpcFunc"`
-	RoutingKey      []string `yaml:"routingKey"`
-	NotifyPath      string   `yaml:"notifyPath"`
-	NotifyTimeout   int      `yaml:"notifyTimeout"`
-	RetryTimes      int      `yaml:"retryTimes"`
-	RetryDuration   int      `yaml:"retryDuration"`
-	BindingExchange string   `yaml:"bindingExchange"`
+	QueueName       string   `yaml:"queueName" json:"queueName"`
+	NotifyMethod    string   `yaml:"notifyMethod" json:"notifyMethod"`
+	RpcFunc         string   `yaml:"rpcFunc" json:"rpcFunc"`
+	RoutingKey      []string `yaml:"routingKey" json:"routingKey"`
+	NotifyPath      string   `yaml:"notifyPath" json:"notifyPath"`
+	NotifyTimeout   int      `yaml:"notifyTimeout" json:"notifyTimeout"`
+	RetryTimes      int      `yaml:"retryTimes" json:"retryTimes"`
+	RetryDuration   int      `yaml:"retryDuration" json:"retryDuration"`
+	BindingExchange string   `yaml:"bindingExchange" json:"bindingExchange"`
 	project         *ProjectConfig
 }
 
@@ -163,16 +179,32 @@ func (qc QueueConfig) DeclareQueue(channel *amqp.Channel) {
 	utils.PanicOnError(err)
 }
 
+// KnightConfigManagerInstance ...
+func KnightConfigManagerInstance() *KnightConfigManager {
+	return knightManager
+}
+
+// NewKnightConfigManager ...
+func NewKnightConfigManager(configFileName string) *KnightConfigManager {
+	once.Do(func() {
+		knightManager = &KnightConfigManager{ConfigFileName: configFileName}
+	})
+	return knightManager
+}
+
 // LoadQueuesConfig ....
-func LoadQueuesConfig(configFileName string, allQueues []*QueueConfig) []*QueueConfig {
-	configFile, err := ioutil.ReadFile(configFileName)
+func (manager *KnightConfigManager) LoadQueuesConfig() []*QueueConfig {
+	manager.Lock.Lock()
+	defer manager.Lock.Unlock()
+	allQueues := []*QueueConfig{}
+	configFile, err := ioutil.ReadFile(manager.ConfigFileName)
 	utils.PanicOnError(err)
 
 	projectsConfig := ProjectsConfig{}
 	err = yaml.Unmarshal(configFile, &projectsConfig)
 	utils.PanicOnError(err)
 	log.Printf("find config: %v", projectsConfig)
-
+	manager.Configs = &projectsConfig
 	projects := projectsConfig.Projects
 	for i, project := range projects {
 		log.Printf("find project: %s", project.Name)
@@ -187,4 +219,32 @@ func LoadQueuesConfig(configFileName string, allQueues []*QueueConfig) []*QueueC
 	}
 
 	return allQueues
+}
+
+// SaveQueuesConfig ...
+func (manager *KnightConfigManager) SaveQueuesConfig(queues []QueueConfig, projectName string) {
+	manager.Lock.Lock()
+	defer manager.Lock.Unlock()
+	projects := manager.Configs.Projects
+	for _, project := range projects {
+		if project.Name == projectName {
+			for _, queue := range queues {
+				project.Queues = append(project.Queues, queue)
+			}
+			break
+		}
+	}
+	configs, err := yaml.Marshal(projects)
+	if err != nil {
+		log.Fatal(err)
+	}
+	file, err := os.OpenFile(manager.ConfigFileName, os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = file.WriteString(string(configs))
+	if err != nil {
+		log.Fatal(err)
+	}
+	file.Sync()
 }
