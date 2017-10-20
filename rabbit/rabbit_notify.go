@@ -48,7 +48,6 @@ func newHttpClient(maxIdleConns, maxIdleConnsPerHost, idleConnTimeout int) *http
 	client := &http.Client{
 		Transport: tr,
 	}
-
 	return client
 }
 

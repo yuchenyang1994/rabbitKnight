@@ -64,13 +64,14 @@ func (man *RabbitKnightMan) receiveMessage(done <-chan struct{}) <-chan Message 
 					msg.MessageId = fmt.Sprintf("%s", uuid.NewV4())
 					client := newHttpClient(HttpMaxIdleConns, HttpMaxIdleConnsPerHost, HttpIdleConnTimeout)
 					client.Timeout = time.Duration(qc.NotifyTimeoutWithDefault()) * time.Second
+					var message Message
 					if qc.GetNotifyMethod() == "RPC" {
 						notifyer := NewJSONRPCNotifyer(qc, client)
-						message := NewKnightMessage(qc, &msg, &notifyer)
-						out <- message
+						message = NewKnightMessage(qc, &msg, &notifyer)
+					} else {
+						notifyer := NewApiNotiFyer(qc, client)
+						message = NewKnightMessage(qc, &msg, &notifyer)
 					}
-					notifyer := NewApiNotiFyer(qc, client)
-					message := NewKnightMessage(qc, &msg, &notifyer)
 					out <- message
 					message.Printf("receiver: received msg")
 				case <-done:
