@@ -4,7 +4,6 @@ import:
 - package: gopkg.in/yaml.v2
 - package: github.com/satori/go.uuid
   version: v1.1.0
-- package: github.com/gin-gonic/gin
 - package: github.com/gorilla/websocket
   version: ~1.2.0
 - package: github.com/ybbus/jsonrpc

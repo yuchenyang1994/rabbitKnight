@@ -123,17 +123,7 @@ func (man *RabbitKnightMan) workMessage(in <-chan Message) <-chan Message {
 	work := func(m Message, o chan<- Message) {
 		m.Printf("worker: received a msg, body: %s", string(m.amqpDelivery.Body))
 		defer wg.Done()
-		event := EventMsgForJSON{
-			MsgID:       m.amqpDelivery.MessageId,
-			Event:       "Notifying",
-			RabbitMsg:   string(m.amqpDelivery.Body),
-			ProjectName: m.queueConfig.project.Name,
-			QueueName:   m.queueConfig.QueueName}
-		eventJSON, err := json.Marshal(event)
-		if err != nil {
-			utils.LogOnError(err)
-		}
-		man.hub.broadcast <- eventJSON
+		man.notifyWatcher("Handing", m)
 		m.Notify()
 		o <- m
 	}
@@ -166,44 +156,13 @@ func (man *RabbitKnightMan) ackMessage(in <-chan Message) <-chan Message {
 
 			if m.IsNotifySuccess() {
 				m.Ack()
-				event := EventMsgForJSON{
-					MsgID:       m.amqpDelivery.MessageId,
-					Event:       "Success",
-					RabbitMsg:   string(m.amqpDelivery.Body),
-					ProjectName: m.queueConfig.project.Name,
-					QueueName:   m.queueConfig.QueueName}
-				eventJSON, err := json.Marshal(event)
-				if err != nil {
-					utils.LogOnError(err)
-				}
-				man.hub.broadcast <- eventJSON
+				man.notifyWatcher("Success", m)
 			} else if m.IsMaxRetry() {
 				m.Republish(out)
-				event := EventMsgForJSON{
-					MsgID:       m.amqpDelivery.MessageId,
-					Event:       "Retry",
-					RabbitMsg:   string(m.amqpDelivery.Body),
-					ProjectName: m.queueConfig.project.Name,
-					QueueName:   m.queueConfig.QueueName}
-				eventJSON, err := json.Marshal(event)
-				if err != nil {
-					utils.LogOnError(err)
-				}
-				man.hub.broadcast <- eventJSON
+				man.notifyWatcher("Retary", m)
 			} else {
 				m.Reject()
-				event := EventMsgForJSON{
-					MsgID:       m.amqpDelivery.MessageId,
-					Event:       "Reject",
-					RabbitMsg:   string(m.amqpDelivery.Body),
-					ProjectName: m.queueConfig.project.Name,
-					QueueName:   m.queueConfig.QueueName}
-				eventJSON, err := json.Marshal(event)
-				if err != nil {
-					utils.LogOnError(err)
-				}
-				man.hub.SetErrorMsgs(m.queueConfig.project.Name, event)
-				man.hub.broadcast <- eventJSON
+				man.notifyWatcher("Error", m)
 			}
 		}
 	}
@@ -263,6 +222,23 @@ func (man *RabbitKnightMan) resendMessage(in <-chan Message) <-chan Message {
 	}()
 
 	return out
+}
+
+// NotifyWatcher ...
+func (man *RabbitKnightMan) notifyWatcher(eventName string, m Message) {
+	event := EventMsgForJSON{
+		MsgID:       m.amqpDelivery.MessageId,
+		Event:       eventName,
+		RabbitMsg:   string(m.amqpDelivery.Body),
+		ProjectName: m.queueConfig.project.Name,
+		QueueName:   m.queueConfig.QueueName}
+	eventJSON, err := json.Marshal(event)
+	if err != nil {
+		utils.LogOnError(err)
+	}
+	man.hub.SetErrorMsgs(m.queueConfig.project.Name, event)
+	man.hub.broadcast <- eventJSON
+
 }
 
 // RunKnight run the watch

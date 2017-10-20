@@ -41,7 +41,6 @@ func (hub *KnightHub) Run() {
 				utils.LogOnError(err)
 			}
 			hub.broadcast <- errorMsgs
-
 		case client := <-hub.unregister:
 			if _, ok := hub.clients[client]; ok {
 				delete(hub.clients, client)

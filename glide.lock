@@ -1,8 +1,6 @@
-hash: 2cbb104d2d29c3121e61fd2004153acac41e13158e4a4f79744826934d776631
-updated: 2017-10-19T18:05:05.656120212+08:00
+hash: a46bc71aa624d898d2de050bda1a1379e1932756bafbf765bc741b4193f302dd
+updated: 2017-10-20T20:52:49.394510434+08:00
 imports:
-- name: github.com/gin-gonic/gin
-  version: b8b68314faa067acae5b17c828127b04af51ebe2
 - name: github.com/gorilla/websocket
   version: ea4d1f681babbce9545c9c5f3d5194a789c89f5b
 - name: github.com/satori/go.uuid
