@@ -1,11 +1,10 @@
 package rabbit
 
 import (
+	"bytes"
 	"log"
 	"net/http"
 	"time"
-
-	"bytes"
 
 	"github.com/streadway/amqp"
 	"github.com/ybbus/jsonrpc"
@@ -72,7 +71,7 @@ func (notifyer *ApiNotifyer) NotifyConsumer(body []byte) bool {
 	req.Header.Set("Content-Type", "application/json")
 	response, err := notifyer.httpClient.Do(req)
 	if err != nil {
-		log.Panicf("notifu url %s fail:%s", qc.NotifyUrl(), err)
+		log.Panicf("notify url %s fail:%s", qc.NotifyUrl(), err)
 		return false
 	}
 	defer response.Body.Close()

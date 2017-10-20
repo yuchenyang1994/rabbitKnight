@@ -3,8 +3,8 @@ projects:
     queuesDefault:
       notifyBase: "http://localhost:5000"
       notifyTimeout: 5
-      retryTimes: 40
-      retryDuration: 300
+      retryTimes: 3
+      retryDuration: 3
       NotifyMethod: "API"
     queues:
       - queueName: test
