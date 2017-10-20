@@ -43,6 +43,15 @@ type RabbitKnightMan struct {
 	hub     *KnightHub
 }
 
+func NewRabbitKnightMan(queues []*QueueConfig, amqpUrl string, hub *KnightHub) *RabbitKnightMan {
+	man := RabbitKnightMan{
+		queues:  queues,
+		amqpUrl: amqpUrl,
+		hub:     hub,
+	}
+	return &man
+}
+
 // receiveMessage ...
 func (man *RabbitKnightMan) receiveMessage(done <-chan struct{}) <-chan Message {
 	out := make(chan Message, ChannelBufferLength)
@@ -193,6 +202,7 @@ func (man *RabbitKnightMan) ackMessage(in <-chan Message) <-chan Message {
 				if err != nil {
 					utils.LogOnError(err)
 				}
+				man.hub.SetErrorMsgs(m.queueConfig.project.Name, event)
 				man.hub.broadcast <- eventJSON
 			}
 		}

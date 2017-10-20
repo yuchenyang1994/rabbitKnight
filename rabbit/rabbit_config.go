@@ -136,7 +136,6 @@ func (qc QueueConfig) DeclareExchange(channel *amqp.Channel) {
 		utils.PanicOnError(err)
 	}
 }
-
 func (qc QueueConfig) DeclareQueue(channel *amqp.Channel) {
 	var err error
 

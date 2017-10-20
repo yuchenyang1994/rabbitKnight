@@ -4,20 +4,30 @@ import (
 	"encoding/json"
 	"log"
 	"rabbitKnight/utils"
+	"sync"
 )
-
-// HubErrorCache ...
-type HubErrorCache struct {
-	QueueName string   `json:"queueName"`
-	ErrorMsgs []string `json:"messages"`
-}
 
 // KnightHub the knight message hub
 type KnightHub struct {
+	Lock       *sync.RWMutex
+	ErrorMsgs  map[string][]EventMsgForJSON
 	clients    map[*KnightClient]bool
 	broadcast  chan []byte
 	register   chan *KnightClient
 	unregister chan *KnightClient
+}
+
+func NewKnightHub() *KnightHub {
+	lock := &sync.RWMutex{}
+	hub := KnightHub{
+		Lock:       lock,
+		ErrorMsgs:  make(map[string][]EventMsgForJSON),
+		clients:    make(map[*KnightClient]bool),
+		broadcast:  make(chan []byte),
+		unregister: make(chan *KnightClient),
+		register:   make(chan *KnightClient),
+	}
+	return &hub
 }
 
 // Run run the hub
@@ -50,4 +60,13 @@ func (hub *KnightHub) Run() {
 		}
 	}
 
+}
+
+// SetErrorMsgs ...
+func (hub *KnightHub) SetErrorMsgs(projectName string, errorEvent EventMsgForJSON) {
+	hub.Lock.Lock()
+	defer hub.Lock.Unlock()
+	events := hub.ErrorMsgs[projectName]
+	events = append(events, errorEvent)
+	hub.ErrorMsgs[projectName] = events
 }
