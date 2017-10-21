@@ -7,8 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"encoding/json"
-
 	uuid "github.com/satori/go.uuid"
 	"github.com/streadway/amqp"
 )
@@ -166,10 +164,8 @@ func (man *RabbitKnightMan) ackMessage(in <-chan Message) <-chan Message {
 				m.Ack()
 			} else if m.IsMaxRetry() {
 				m.Republish(out)
-				man.notifyWatcher("Error", m)
 			} else {
 				m.Reject()
-				man.notifyWatcher("Warning", m)
 			}
 		}
 	}
@@ -235,25 +231,26 @@ func (man *RabbitKnightMan) notifyEventForStatus() {
 	msg := EventMsgForStatus{
 		"Status", man.queue.QueueName, man.queue.project.Name, man.Status,
 	}
-	m, err := json.Marshal(msg)
-	if err != nil {
-		log.Fatal(err)
-	}
-	man.hub.broadcast <- m
+	man.hub.broadcastStatus <- msg
 }
 
 func (man *RabbitKnightMan) notifyEventForQueue(channel *amqp.Channel) {
-	errors := channel.QueueInspect(man.queue.ErrorQueueName()).Messages
-	retrys := channel.QueueInspect(man.queue.RetryQueueName()).Messages
-	works := channel.QueueInspect(man.queue.WorkerQueueName()).Messages
-	msg := EventMsgForQueue{
-		man.queue.QueueName, man.queue.project.Name, errors, retrys, works,
-	}
-	m, err := json.Marshal(msg)
+	errors, err := channel.QueueInspect(man.queue.ErrorQueueName())
 	if err != nil {
 		log.Fatal(err)
 	}
-	man.hub.broadcast <- m
+	retrys, err := channel.QueueInspect(man.queue.RetryQueueName())
+	if err != nil {
+		log.Fatal(err)
+	}
+	works, err := channel.QueueInspect(man.queue.WorkerQueueName())
+	if err != nil {
+		log.Fatal(err)
+	}
+	msg := EventMsgForQueue{
+		man.queue.QueueName, man.queue.project.Name, errors.Messages, retrys.Messages, works.Messages,
+	}
+	man.hub.broadcastQueue <- msg
 }
 
 // RunKnight run the watch
@@ -266,4 +263,41 @@ func (man *RabbitKnightMan) RunKnight(done <-chan struct{}) {
 	man.queue.DeclareExchange(channel)
 	man.queue.DeclareQueue(channel)
 	<-man.resendMessage(man.ackMessage(man.workMessage(man.receiveMessage(done))))
+}
+
+type RabbitKnightMapping struct {
+	Mapping map[string]map[string]*RabbitKnightMan
+	Lock    sync.RWMutex
+}
+
+// NewRabbitKnightMapping ...
+func NewRabbitKnightMapping() *RabbitKnightMapping {
+	mapping := make(map[string]map[string]*RabbitKnightMan)
+	m := RabbitKnightMapping{Mapping: mapping}
+	return &m
+}
+
+func (mapping *RabbitKnightMapping) SetMans(projectName string, queueName string, man *RabbitKnightMan) {
+	mapping.Lock.Lock()
+	defer mapping.Lock.Unlock()
+	queues := mapping.Mapping[projectName]
+	queues[queueName] = man
+}
+
+func (mapping *RabbitKnightMapping) GetAllMans() map[string]map[string]*RabbitKnightMan {
+	mapping.Lock.RLock()
+	defer mapping.Lock.RUnlock()
+	return mapping.Mapping
+}
+
+func (mapping *RabbitKnightMapping) GetMansForProjectName(projectName string) map[string]*RabbitKnightMan {
+	mapping.Lock.RLock()
+	defer mapping.Lock.RUnlock()
+	return mapping.Mapping[projectName]
+}
+
+func (mapping *RabbitKnightMapping) SetManFormQueueConfig(queue *QueueConfig, man *RabbitKnightMan) {
+	mapping.Lock.Lock()
+	defer mapping.Lock.Unlock()
+	mapping.Mapping[queue.project.Name][queue.QueueName] = man
 }

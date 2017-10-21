@@ -10,6 +10,9 @@ import (
 	"rabbitKnight/rabbit"
 	"rabbitKnight/utils"
 	"syscall"
+
+	"github.com/go-martini/martini"
+	"github.com/martini-contrib/render"
 )
 
 var (
@@ -30,34 +33,36 @@ func main() {
 
 		log.SetOutput(f)
 	}
-	doneHub, _ := RunQueueKnight(hub)
-	handleSignal(doneHub)
+	configManager := rabbit.NewKnightConfigManager(*configFilename)
+	allQueueConfigs := configManager.LoadQueuesConfig()
+	rabbitManMaping := rabbit.NewRabbitKnightMapping()
+	doneHub := RunQueueKnight(hub, rabbitManMaping, allQueueConfigs)
 	// Server
-	http.HandleFunc("/hello", HelloServer)
-	err := http.ListenAndServe(*serverPort, nil)
-	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
-	}
+	server := martini.Classic()
+	server.Use(render.Renderer())
+	server.Map(rabbitManMaping)
+	server.Map(configManager)
+	server.Map(doneHub)
+	server.Run()
+	handleSignal(doneHub)
 }
 
 func HelloServer(w http.ResponseWriter, req *http.Request) {
 	io.WriteString(w, "hello, world!\n")
 }
 
-func RunQueueKnight(hub *rabbit.KnightHub) (*rabbit.KnightDoneHub, map[string]*rabbit.RabbitKnightMan) {
-	configManager := rabbit.NewKnightConfigManager(*configFilename)
-	allQueueConfigs := configManager.LoadQueuesConfig()
+func RunQueueKnight(hub *rabbit.KnightHub, mapping *rabbit.RabbitKnightMapping, allQueueConfigs []*rabbit.QueueConfig) *rabbit.KnightDoneHub {
+
 	doneMap := make(map[string]chan<- struct{})
-	mans := make(map[string]*rabbit.RabbitKnightMan)
 	for _, queueConfig := range allQueueConfigs {
 		done := make(chan struct{}, 1)
 		doneMap[queueConfig.QueueName] = done
 		man := rabbit.NewRabbitKnightMan(queueConfig, *amqpConfig, hub)
-		mans[queueConfig.QueueName] = man
+		mapping.SetManFormQueueConfig(queueConfig, man)
 		go man.RunKnight(done)
 	}
 	doneHub := rabbit.NewKnightDoneHub(doneMap)
-	return doneHub, mans
+	return doneHub
 }
 
 func handleSignal(doneHub *rabbit.KnightDoneHub) {

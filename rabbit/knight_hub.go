@@ -40,7 +40,7 @@ func (hub *KnightHub) Run() {
 				delete(hub.clients, client)
 				close(client.send)
 			}
-		case message, ok := <-hub.broadcastStatus:
+		case message, _ := <-hub.broadcastStatus:
 			for client := range hub.clients {
 				if client.projectName == message.ProjectName || client.projectName == "ALL" {
 					msg, err := json.Marshal(message)
@@ -59,7 +59,7 @@ func (hub *KnightHub) Run() {
 				}
 			}
 
-		case message, ok := <-hub.broadcastQueue:
+		case message, _ := <-hub.broadcastQueue:
 			for client := range hub.clients {
 				if client.projectName == message.ProjectName && client.queueName == message.QueueName {
 					msg, err := json.Marshal(message)

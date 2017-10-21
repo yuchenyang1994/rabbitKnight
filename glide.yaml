@@ -10,3 +10,9 @@ import:
 - package: github.com/jinzhu/gorm
   version: ~1.0.0
 - package: github.com/jinzhu/inflection
+- package: github.com/go-martini/martini
+  version: ~1.0.0
+- package: github.com/codegangsta/inject
+  version: ~1.0.0-rc1
+- package: github.com/martini-contrib/render
+- package: github.com/oxtoacart/bpool
