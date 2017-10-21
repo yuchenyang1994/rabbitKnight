@@ -38,14 +38,14 @@ type EventMsgForJSON struct {
 }
 
 type RabbitKnightMan struct {
-	queues  []*QueueConfig
+	queue   *QueueConfig
 	amqpUrl string // Rabbitmq 的配置
 	hub     *KnightHub
 }
 
-func NewRabbitKnightMan(queues []*QueueConfig, amqpUrl string, hub *KnightHub) *RabbitKnightMan {
+func NewRabbitKnightMan(queue *QueueConfig, amqpUrl string, hub *KnightHub) *RabbitKnightMan {
 	man := RabbitKnightMan{
-		queues:  queues,
+		queue:   queue,
 		amqpUrl: amqpUrl,
 		hub:     hub,
 	}
@@ -102,11 +102,9 @@ func (man *RabbitKnightMan) receiveMessage(done <-chan struct{}) <-chan Message 
 			}
 		}
 	}
-	for _, queue := range man.queues {
-		wg.Add(ReceiverNum)
-		for i := 0; i < ReceiverNum; i++ {
-			go receiver(*queue)
-		}
+	wg.Add(ReceiverNum)
+	for i := 0; i < ReceiverNum; i++ {
+		go receiver(*man.queue)
 	}
 	go func() {
 		wg.Wait()
@@ -123,7 +121,6 @@ func (man *RabbitKnightMan) workMessage(in <-chan Message) <-chan Message {
 	work := func(m Message, o chan<- Message) {
 		m.Printf("worker: received a msg, body: %s", string(m.amqpDelivery.Body))
 		defer wg.Done()
-		man.notifyWatcher("Handing", m)
 		m.Notify()
 		o <- m
 	}
@@ -156,13 +153,12 @@ func (man *RabbitKnightMan) ackMessage(in <-chan Message) <-chan Message {
 
 			if m.IsNotifySuccess() {
 				m.Ack()
-				man.notifyWatcher("Success", m)
 			} else if m.IsMaxRetry() {
 				m.Republish(out)
 				man.notifyWatcher("Error", m)
 			} else {
 				m.Reject()
-				man.notifyWatcher("Reject", m)
+				man.notifyWatcher("Warning", m)
 			}
 		}
 	}
@@ -247,10 +243,8 @@ func (man *RabbitKnightMan) RunKnight(done <-chan struct{}) {
 	if err != nil {
 		utils.PanicOnError(err)
 	}
-	for _, queue := range man.queues {
-		log.Printf("allQueues: queue config: %v", queue)
-		queue.DeclareExchange(channel)
-		queue.DeclareQueue(channel)
-	}
+	log.Printf("queue config: %v", man.queue)
+	man.queue.DeclareExchange(channel)
+	man.queue.DeclareQueue(channel)
 	<-man.resendMessage(man.ackMessage(man.workMessage(man.receiveMessage(done))))
 }

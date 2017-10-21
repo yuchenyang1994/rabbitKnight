@@ -107,7 +107,6 @@ func (m Message) Republish(out chan<- Message) error {
 func (m Message) CloneAndPublish(channel *amqp.Channel) error {
 	msg := m.amqpDelivery
 	qc := m.queueConfig
-
 	errMsg := cloneToPublishMsg(msg)
 	err := channel.Publish(qc.ErrorExchangeName(), msg.RoutingKey, false, false, *errMsg)
 	utils.LogOnError(err)

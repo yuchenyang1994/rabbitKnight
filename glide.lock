@@ -1,8 +1,12 @@
-hash: a46bc71aa624d898d2de050bda1a1379e1932756bafbf765bc741b4193f302dd
-updated: 2017-10-20T20:52:49.394510434+08:00
+hash: 62a8049d7429d3145fa13ceb9f6b7f83286fec072639cb666a5055dacfef4845
+updated: 2017-10-21T21:30:38.622885702+08:00
 imports:
 - name: github.com/gorilla/websocket
   version: ea4d1f681babbce9545c9c5f3d5194a789c89f5b
+- name: github.com/jinzhu/gorm
+  version: 5174cc5c242a728b435ea2be8a2f7f998e15429b
+- name: github.com/jinzhu/inflection
+  version: 1c35d901db3da928c72a72d8458480cc9ade058f
 - name: github.com/satori/go.uuid
   version: 879c5887cd475cd7864858769793b2ceb0d44feb
 - name: github.com/streadway/amqp

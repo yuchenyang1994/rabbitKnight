@@ -9,11 +9,10 @@ import (
 
 // KnightHub the knight message hub
 type KnightHub struct {
-	Lock      *sync.RWMutex
-	ErrorMsgs map[string][]EventMsgForJSON
-	clients   map[*KnightClient]bool
-	broadcast chan []byte
-
+	Lock       *sync.RWMutex
+	ErrorMsgs  map[string][]EventMsgForJSON
+	clients    map[*KnightClient]bool
+	broadcast  chan []byte
 	register   chan *KnightClient
 	unregister chan *KnightClient
 }
@@ -42,6 +41,7 @@ func (hub *KnightHub) Run() {
 				utils.LogOnError(err)
 			}
 			hub.broadcast <- errorMsgs
+
 		case client := <-hub.unregister:
 			if _, ok := hub.clients[client]; ok {
 				delete(hub.clients, client)
@@ -69,4 +69,27 @@ func (hub *KnightHub) SetErrorMsgs(projectName string, errorEvent EventMsgForJSO
 	events := hub.ErrorMsgs[projectName]
 	events = append(events, errorEvent)
 	hub.ErrorMsgs[projectName] = events
+}
+
+type KnightDoneHub struct {
+	DoneMap map[string]chan<- struct{}
+}
+
+// NewKnightDoneHub ...
+func NewKnightDoneHub(doneMap map[string]chan<- struct{}) *KnightDoneHub {
+	donMap := KnightDoneHub{doneMap}
+	return &donMap
+}
+
+// StopKnightByQueueName ...
+func (doneHub *KnightDoneHub) StopKnightByQueueName(name string) {
+	done := doneHub.DoneMap[name]
+	log.Printf("wail close %s, close done channel", name)
+	close(done)
+}
+
+func (doneHub *KnightDoneHub) StopAllKnight() {
+	for _, done := range doneHub.DoneMap {
+		close(done)
+	}
 }

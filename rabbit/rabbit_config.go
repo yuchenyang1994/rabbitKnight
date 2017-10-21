@@ -29,21 +29,21 @@ type KnightConfigManager struct {
 }
 
 type ProjectsConfig struct {
-	Projects []ProjectConfig `yaml:"projects" json:"projects"`
+	Projects map[string]ProjectConfig `yaml:"projects" json:"projects"`
 }
 
 // ProjectConfig list queue configs 批量配置时的配置文件
 type ProjectConfig struct {
-	Name                string              `yaml:"name" json:"name"`                  // 项目名称
-	QueuesDefaultConfig QueuesDefaultConfig `yaml:"queuesDefault" json:"queueDefault"` // 默认配置
-	Queues              []QueueConfig       `yaml:"queues" json:"queues"`              // 队列配置
+	Name                string                 `yaml:"name" json:"name"`                  // 项目名称
+	QueuesDefaultConfig QueuesDefaultConfig    `yaml:"queuesDefault" json:"queueDefault"` // 默认配置
+	Queues              map[string]QueueConfig `yaml:"queues" json:"queues"`              // 队列配置
 }
 
 // QueuesDefaultConfig 队列默认配置
 type QueuesDefaultConfig struct {
-	NotifyBase      string `yaml:"notifyBase" json:"notifyBase"` // notyfy Host
+	NotifyBase      string `yaml:"notifyBase" json:"notifyBase"`       // notyfy Host NotifyMethod    string `yaml:"notifyMethod" json:"notifyMethod"`
+	NotifyTimeout   int    `yaml:"notifyTimeout" json:"notifyTimeout"` // 全局过期时间
 	NotifyMethod    string `yaml:"notifyMethod" json:"notifyMethod"`
-	NotifyTimeout   int    `yaml:"notifyTimeout" json:"notifyTimeout"`     // 全局过期时间
 	RetryTimes      int    `yaml:"retryTimes" json:"retryTimes"`           // 重试时间
 	RetryDuration   int    `yaml:"retryDuration" json:"retryDuration"`     // 重试次数
 	BindingExchange string `yaml:"bindingExchange" json:"bindingExchange"` // 绑定RabbbitMqExchange
@@ -203,42 +203,32 @@ func (manager *KnightConfigManager) LoadQueuesConfig() []*QueueConfig {
 	allQueues := []*QueueConfig{}
 	configFile, err := ioutil.ReadFile(manager.ConfigFileName)
 	utils.PanicOnError(err)
-
 	projectsConfig := ProjectsConfig{}
 	err = yaml.Unmarshal(configFile, &projectsConfig)
 	utils.PanicOnError(err)
-	log.Printf("find config: %v", projectsConfig)
-	manager.Configs = &projectsConfig
 	projects := projectsConfig.Projects
 	for i, project := range projects {
-		log.Printf("find project: %s", project.Name)
-
-		queues := projects[i].Queues
+		log.Printf("find project: %s", i)
+		queues := project.Queues
 		for j, queue := range queues {
-			log.Printf("find queue: %v", queue)
-
-			queues[j].project = &projects[i]
-			allQueues = append(allQueues, &queues[j])
+			log.Printf("find queue: %v", j)
+			queue.project = &project
+			allQueues = append(allQueues, &queue)
 		}
 	}
+	manager.Configs = &projectsConfig
 
 	return allQueues
 }
 
 // SaveQueuesConfig ...
-func (manager *KnightConfigManager) SaveQueuesConfig(queues []QueueConfig, projectName string) {
+func (manager *KnightConfigManager) SaveQueuesConfig(config QueueConfig, projectName string, queueName string) {
 	manager.Lock.Lock()
 	defer manager.Lock.Unlock()
-	projects := manager.Configs.Projects
-	for _, project := range projects {
-		if project.Name == projectName {
-			for _, queue := range queues {
-				project.Queues = append(project.Queues, queue)
-			}
-			break
-		}
-	}
-	configs, err := yaml.Marshal(projects)
+	project := manager.Configs.Projects[projectName]
+	project.Queues[queueName] = config
+	manager.Configs.Projects[projectName] = project
+	configs, err := yaml.Marshal(manager.Configs.Projects)
 	if err != nil {
 		log.Fatal(err)
 	}

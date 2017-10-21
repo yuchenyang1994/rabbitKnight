@@ -1,5 +1,5 @@
 projects:
-  - name: "test"
+  test:
     queuesDefault:
       notifyBase: "http://localhost:5000"
       notifyTimeout: 5
@@ -7,8 +7,8 @@ projects:
       retryDuration: 3
       NotifyMethod: "API"
     queues:
-      - queueName: test
+      test:
+        queueName: test
         notifyPath: "/test" 
         bindingExchange: "test_exchange"
-        routingKey:
-          - "test"
+        routingKey: ["test"]

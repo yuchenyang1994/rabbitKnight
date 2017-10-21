@@ -2,7 +2,9 @@ package main
 
 import (
 	"flag"
+	"io"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"rabbitKnight/rabbit"
@@ -28,24 +30,43 @@ func main() {
 
 		log.SetOutput(f)
 	}
-	configManager := rabbit.NewKnightConfigManager(*configFilename)
-	allQueueConfigs := configManager.LoadQueuesConfig()
-	man := rabbit.NewRabbitKnightMan(allQueueConfigs, *amqpConfig, hub)
-	done := make(chan struct{}, 1)
-	man.RunKnight(done)
-	handleSignal(done)
+	doneHub := RunQueueKnight(hub)
+	handleSignal(doneHub)
+	// Server
+	http.HandleFunc("/hello", HelloServer)
+	err := http.ListenAndServe(*serverPort, nil)
+	if err != nil {
+		log.Fatal("ListenAndServe: ", err)
+	}
 }
 
-func handleSignal(done chan<- struct{}) {
+func HelloServer(w http.ResponseWriter, req *http.Request) {
+	io.WriteString(w, "hello, world!\n")
+}
+
+func RunQueueKnight(hub *rabbit.KnightHub) *rabbit.KnightDoneHub {
+	configManager := rabbit.NewKnightConfigManager(*configFilename)
+	allQueueConfigs := configManager.LoadQueuesConfig()
+	doneMap := make(map[string]chan<- struct{})
+	for _, queueConfig := range allQueueConfigs {
+		done := make(chan struct{}, 1)
+		doneMap[queueConfig.QueueName] = done
+		man := rabbit.NewRabbitKnightMan(queueConfig, *amqpConfig, hub)
+		go man.RunKnight(done)
+	}
+	doneHub := rabbit.NewKnightDoneHub(doneMap)
+	return doneHub
+}
+
+func handleSignal(doneHub *rabbit.KnightDoneHub) {
 	chan_sigs := make(chan os.Signal, 1)
 	signal.Notify(chan_sigs, syscall.SIGQUIT)
-
 	go func() {
 		sig := <-chan_sigs
 
 		if sig != nil {
 			log.Printf("received a signal %v, close done channel", sig)
-			close(done)
+			doneHub.StopAllKnight()
 		}
 	}()
 }
