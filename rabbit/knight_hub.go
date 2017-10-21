@@ -3,29 +3,28 @@ package rabbit
 import (
 	"encoding/json"
 	"log"
-	"rabbitKnight/utils"
 	"sync"
 )
 
 // KnightHub the knight message hub
 type KnightHub struct {
-	Lock       *sync.RWMutex
-	ErrorMsgs  map[string][]EventMsgForJSON
-	clients    map[*KnightClient]bool
-	broadcast  chan []byte
-	register   chan *KnightClient
-	unregister chan *KnightClient
+	Lock            *sync.RWMutex
+	clients         map[*KnightClient]bool
+	broadcastStatus chan EventMsgForStatus
+	broadcastQueue  chan EventMsgForQueue
+	register        chan *KnightClient
+	unregister      chan *KnightClient
 }
 
 func NewKnightHub() *KnightHub {
 	lock := &sync.RWMutex{}
 	hub := KnightHub{
-		Lock:       lock,
-		ErrorMsgs:  make(map[string][]EventMsgForJSON),
-		clients:    make(map[*KnightClient]bool),
-		broadcast:  make(chan []byte),
-		unregister: make(chan *KnightClient),
-		register:   make(chan *KnightClient),
+		Lock:            lock,
+		clients:         make(map[*KnightClient]bool),
+		broadcastQueue:  make(chan EventMsgForQueue),
+		broadcastStatus: make(chan EventMsgForStatus),
+		unregister:      make(chan *KnightClient),
+		register:        make(chan *KnightClient),
 	}
 	return &hub
 }
@@ -36,39 +35,52 @@ func (hub *KnightHub) Run() {
 		select {
 		case client := <-hub.register:
 			hub.clients[client] = true
-			errorMsgs, err := json.Marshal(hub.ErrorMsgs)
-			if err != nil {
-				utils.LogOnError(err)
-			}
-			hub.broadcast <- errorMsgs
-
 		case client := <-hub.unregister:
 			if _, ok := hub.clients[client]; ok {
 				delete(hub.clients, client)
 				close(client.send)
 			}
-		case message := <-hub.broadcast:
-			log.Println(string(message))
+		case message, ok := <-hub.broadcastStatus:
 			for client := range hub.clients {
-				select {
-				case client.send <- message:
-				default:
+				if client.projectName == message.ProjectName || client.projectName == "ALL" {
+					msg, err := json.Marshal(message)
+					if err != nil {
+						log.Fatal(err)
+					}
+					select {
+					case client.send <- msg:
+					default:
+						close(client.send)
+						delete(hub.clients, client)
+					}
+				} else {
 					close(client.send)
 					delete(hub.clients, client)
 				}
 			}
+
+		case message, ok := <-hub.broadcastQueue:
+			for client := range hub.clients {
+				if client.projectName == message.ProjectName && client.queueName == message.QueueName {
+					msg, err := json.Marshal(message)
+					if err != nil {
+						log.Fatal(err)
+					}
+					select {
+					case client.send <- msg:
+					default:
+						close(client.send)
+						delete(hub.clients, client)
+					}
+				} else {
+					close(client.send)
+					delete(hub.clients, client)
+				}
+			}
+
 		}
 	}
 
-}
-
-// SetErrorMsgs ...
-func (hub *KnightHub) SetErrorMsgs(projectName string, errorEvent EventMsgForJSON) {
-	hub.Lock.Lock()
-	defer hub.Lock.Unlock()
-	events := hub.ErrorMsgs[projectName]
-	events = append(events, errorEvent)
-	hub.ErrorMsgs[projectName] = events
 }
 
 type KnightDoneHub struct {

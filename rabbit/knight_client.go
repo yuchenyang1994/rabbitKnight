@@ -14,6 +14,10 @@ type KnightClient struct {
 
 	// Buffered channel of outbound messages.
 	send chan []byte
+	// the projectName
+	projectName string
+	// the queue Name
+	queueName string
 }
 
 const (

@@ -30,7 +30,7 @@ func main() {
 
 		log.SetOutput(f)
 	}
-	doneHub := RunQueueKnight(hub)
+	doneHub, _ := RunQueueKnight(hub)
 	handleSignal(doneHub)
 	// Server
 	http.HandleFunc("/hello", HelloServer)
@@ -44,18 +44,20 @@ func HelloServer(w http.ResponseWriter, req *http.Request) {
 	io.WriteString(w, "hello, world!\n")
 }
 
-func RunQueueKnight(hub *rabbit.KnightHub) *rabbit.KnightDoneHub {
+func RunQueueKnight(hub *rabbit.KnightHub) (*rabbit.KnightDoneHub, map[string]*rabbit.RabbitKnightMan) {
 	configManager := rabbit.NewKnightConfigManager(*configFilename)
 	allQueueConfigs := configManager.LoadQueuesConfig()
 	doneMap := make(map[string]chan<- struct{})
+	mans := make(map[string]*rabbit.RabbitKnightMan)
 	for _, queueConfig := range allQueueConfigs {
 		done := make(chan struct{}, 1)
 		doneMap[queueConfig.QueueName] = done
 		man := rabbit.NewRabbitKnightMan(queueConfig, *amqpConfig, hub)
+		mans[queueConfig.QueueName] = man
 		go man.RunKnight(done)
 	}
 	doneHub := rabbit.NewKnightDoneHub(doneMap)
-	return doneHub
+	return doneHub, mans
 }
 
 func handleSignal(doneHub *rabbit.KnightDoneHub) {

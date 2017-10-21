@@ -28,19 +28,26 @@ const (
 	HttpIdleConnTimeout     = 30  // default 90 in net/http
 )
 
-// EventMsgForJSON Watch Msg
-type EventMsgForJSON struct {
-	MsgID       string `json:"msgId"`
-	Event       string `json:"event"`
-	RabbitMsg   string `json:"rabbitMsg"`
-	ProjectName string `json:"projectName"`
+type EventMsgForStatus struct {
+	EventName   string `json:"eventName"`
 	QueueName   string `json:"queueName"`
+	ProjectName string `json:"projectName"`
+	Status      bool   `json:"status"`
+}
+
+type EventMsgForQueue struct {
+	QueueName   string `json:"queueName"`
+	ProjectName string `json:"projectName"`
+	ErrorsNum   int    `json:"errorsNum"`
+	RetryNums   int    `json:"retryNums"`
+	Worknums    int    `json:"weokNums"`
 }
 
 type RabbitKnightMan struct {
 	queue   *QueueConfig
 	amqpUrl string // Rabbitmq 的配置
 	hub     *KnightHub
+	Status  bool
 }
 
 func NewRabbitKnightMan(queue *QueueConfig, amqpUrl string, hub *KnightHub) *RabbitKnightMan {
@@ -93,9 +100,13 @@ func (man *RabbitKnightMan) receiveMessage(done <-chan struct{}) <-chan Message 
 						notifyer := NewApiNotiFyer(qc, client)
 						message = NewKnightMessage(qc, &msg, &notifyer)
 					}
+					man.Status = true
+					man.notifyEventForQueue(channel)
 					out <- message
 					message.Printf("receiver: received msg")
 				case <-done:
+					man.notifyEventForStatus()
+					man.Status = false
 					log.Printf("receiver: received a done signal")
 					return
 				}
@@ -220,21 +231,29 @@ func (man *RabbitKnightMan) resendMessage(in <-chan Message) <-chan Message {
 	return out
 }
 
-// NotifyWatcher ...
-func (man *RabbitKnightMan) notifyWatcher(eventName string, m Message) {
-	event := EventMsgForJSON{
-		MsgID:       m.amqpDelivery.MessageId,
-		Event:       eventName,
-		RabbitMsg:   string(m.amqpDelivery.Body),
-		ProjectName: m.queueConfig.project.Name,
-		QueueName:   m.queueConfig.QueueName}
-	eventJSON, err := json.Marshal(event)
-	if err != nil {
-		utils.LogOnError(err)
+func (man *RabbitKnightMan) notifyEventForStatus() {
+	msg := EventMsgForStatus{
+		"Status", man.queue.QueueName, man.queue.project.Name, man.Status,
 	}
-	man.hub.SetErrorMsgs(m.queueConfig.project.Name, event)
-	man.hub.broadcast <- eventJSON
+	m, err := json.Marshal(msg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	man.hub.broadcast <- m
+}
 
+func (man *RabbitKnightMan) notifyEventForQueue(channel *amqp.Channel) {
+	errors := channel.QueueInspect(man.queue.ErrorQueueName()).Messages
+	retrys := channel.QueueInspect(man.queue.RetryQueueName()).Messages
+	works := channel.QueueInspect(man.queue.WorkerQueueName()).Messages
+	msg := EventMsgForQueue{
+		man.queue.QueueName, man.queue.project.Name, errors, retrys, works,
+	}
+	m, err := json.Marshal(msg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	man.hub.broadcast <- m
 }
 
 // RunKnight run the watch
