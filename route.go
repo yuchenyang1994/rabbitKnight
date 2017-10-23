@@ -14,4 +14,7 @@ func router(server *martini.ClassicMartini) {
 	server.Delete("/knights/:projectName/:queueName", handler.StopKnightForQueueName)
 	server.Put("/knights/:projectName/:queueName", handler.StartKnightForQueueName)
 	server.Post("/knights/:projectName", handler.CreateKnightForProject)
+	server.Get("/configs", handler.GetAllConfigs)
+	server.Get("/configs/:projectName", handler.GetAllConfigsByProjectName)
+	server.Get("/configs/:projectName/:queueName", handler.GetConfigsByQueue)
 }
