@@ -207,10 +207,12 @@ func (manager *KnightConfigManager) LoadQueuesConfig() []*QueueConfig {
 	projects := projectsConfig.Projects
 	for i, project := range projects {
 		log.Printf("find project: %s", i)
+		project.Name = i
 		queues := project.Queues
 		for j, queue := range queues {
 			log.Printf("find queue: %v", j)
 			queue.project = &project
+			queue.project.Name = i
 			allQueues = append(allQueues, &queue)
 		}
 	}
@@ -228,6 +230,7 @@ func (manager *KnightConfigManager) LoadQueuesForJSON(jsonBody []byte) []*QueueC
 	projects := projectsConfig.Projects
 	json.Unmarshal(jsonBody, &projectsConfig)
 	for i, project := range projects {
+		project.Name = i
 		log.Printf("find project: %s", i)
 		queues := project.Queues
 		for j, queue := range queues {
@@ -287,6 +290,7 @@ func (manager *KnightConfigManager) SaveAllQueues(jsonBody []byte) {
 	projects := projectsConfig.Projects
 	json.Unmarshal(jsonBody, &projectsConfig)
 	for projectName, project := range projects {
+		project.Name = projectName
 		manager.Configs.Projects[projectName] = project
 	}
 	configs, err := yaml.Marshal(manager.Configs.Projects)

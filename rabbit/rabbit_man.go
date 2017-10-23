@@ -305,5 +305,7 @@ func (mapping *RabbitKnightMapping) GetmanForName(projectName string, queueName 
 func (mapping *RabbitKnightMapping) SetManFormQueueConfig(queue *QueueConfig, man *RabbitKnightMan) {
 	mapping.Lock.Lock()
 	defer mapping.Lock.Unlock()
-	mapping.Mapping[queue.project.Name][queue.QueueName] = man
+	m := make(map[string]*RabbitKnightMan)
+	m[queue.QueueName] = man
+	mapping.Mapping[queue.project.Name] = m
 }

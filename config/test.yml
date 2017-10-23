@@ -1,5 +1,7 @@
 projects:
   test:
+    name:
+      test
     queuesDefault:
       notifyBase: "http://localhost:5000"
       notifyTimeout: 5
