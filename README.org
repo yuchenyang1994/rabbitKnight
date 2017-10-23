@@ -12,9 +12,7 @@
    + Turn off without losing messages
    + Support for JSONRPC AND RESTful calls
 ** Usage
-   + Command
-    #+BEGIN_QUOTE
-    Usage of ./rabbitKnight:
+   ./rabbitKnight:
     -log string
           logging file, default STDOUT
     -mq string
@@ -23,32 +21,29 @@
           server port
     -queue_config string
           the queues config file
-    #+END_QUOTE
    + Queue Config
-    #+BEGIN_QUOTE
-    projects:
-      test:
-        queuesDefault:
-          notifyBase: "http://localhost:5000"
-          notifyTimeout: 5
-          retryTimes: 3
-          retryDuration: 3
-          NotifyMethod: "API" or "RPC"
-        queues:
-          test:
-            // The value set here will override the default
-            queueName: test
-            notifyPath: "/test" 
-            bindingExchange: "test_exchange"
-            routingKey: ["test"]
-    #+END_QUOTE
+      projects:
+        test:
+          queuesDefault:
+            notifyBase: "http://localhost:5000"
+            notifyTimeout: 5
+            retryTimes: 3
+            retryDuration: 3
+            NotifyMethod: "API" or "RPC"
+          queues:
+            test:
+              // The value set here will override the default
+              queueName: test
+              notifyPath: "/test" 
+              bindingExchange: "test_exchange"
+              routingKey: ["test"]
 ** Build
    #+BEGIN_SRC sh
      glide install
      go build
    #+END_SRC
 ** TODOs
-*** []The Web management
+   * [] The Web management
 ** Licence
    MIT Licence
    
