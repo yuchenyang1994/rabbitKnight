@@ -12,6 +12,8 @@
    + Turn off without losing messages
    + Support for JSONRPC AND RESTful calls
 ** Usage
+   + Command
+   #+BEGIN_SRC
    ./rabbitKnight:
     -log string
           logging file, default STDOUT
@@ -21,22 +23,9 @@
           server port
     -queue_config string
           the queues config file
+   #+END_SRC
    + Queue Config
-      projects:
-        test:
-          queuesDefault:
-            notifyBase: "http://localhost:5000"
-            notifyTimeout: 5
-            retryTimes: 3
-            retryDuration: 3
-            NotifyMethod: "API" or "RPC"
-          queues:
-            test:
-              // The value set here will override the default
-              queueName: test
-              notifyPath: "/test" 
-              bindingExchange: "test_exchange"
-              routingKey: ["test"]
+     see the config/test.yml
 ** Build
    #+BEGIN_SRC sh
      glide install
