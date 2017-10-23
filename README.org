@@ -1,7 +1,7 @@
 * The RabbitKnight
   #+CAPTION: This is the caption for the next figure link 
   #+NAME:   fig:SED-HR4049
-  [[http://i1.bvimg.com/607077/a695aa387c62106f.jpg]]
+  [[http://i1.bvimg.com/607077/a695aa387c62106ft.jpg]]
 ** Introduction
    RabbitKnight is a high performance callback center middleware for RabbitMQ based on [[https://github.com/fishtrip/watchman][watchman]]
 ** Features
