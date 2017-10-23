@@ -12,6 +12,8 @@ import (
 
 	"os"
 
+	"encoding/json"
+
 	"github.com/streadway/amqp"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -26,6 +28,7 @@ type KnightConfigManager struct {
 	ConfigFileName string
 	Lock           *sync.RWMutex
 	Configs        *ProjectsConfig
+	AmqpConfig     string
 }
 
 type ProjectsConfig struct {
@@ -182,16 +185,11 @@ func (qc QueueConfig) DeclareQueue(channel *amqp.Channel) {
 	utils.PanicOnError(err)
 }
 
-// KnightConfigManagerInstance ...
-func KnightConfigManagerInstance() *KnightConfigManager {
-	return knightManager
-}
-
 // NewKnightConfigManager ...
-func NewKnightConfigManager(configFileName string) *KnightConfigManager {
+func NewKnightConfigManager(configFileName string, amqp string) *KnightConfigManager {
 	once.Do(func() {
 		lock := sync.RWMutex{}
-		knightManager = &KnightConfigManager{ConfigFileName: configFileName, Lock: &lock}
+		knightManager = &KnightConfigManager{ConfigFileName: configFileName, Lock: &lock, amqpConfig: amqp}
 	})
 	return knightManager
 }
@@ -219,6 +217,45 @@ func (manager *KnightConfigManager) LoadQueuesConfig() []*QueueConfig {
 	manager.Configs = &projectsConfig
 
 	return allQueues
+}
+
+// LoadQueuesForJSON ...
+func (manager *KnightConfigManager) LoadQueuesForJSON(jsonBody []byte) []*QueueConfig {
+	manager.Lock.Lock()
+	defer manager.Lock.Unlock()
+	allQueues := []*QueueConfig{}
+	projectsConfig := ProjectsConfig{}
+	projects := projectsConfig.Projects
+	json.Unmarshal(jsonBody, &projectsConfig)
+	for i, project := range projects {
+		log.Printf("find project: %s", i)
+		queues := project.Queues
+		for j, queue := range queues {
+			log.Printf("find queue: %v", j)
+			queue.project = &project
+			allQueues = append(allQueues, &queue)
+		}
+	}
+	manager.Configs = &projectsConfig
+
+	return allQueues
+}
+
+func (manager *KnightConfigManager) GetQueueConfig(queueName string, projectName string) *QueueConfig {
+	manager.Lock.Lock()
+	defer manager.Lock.Unlock()
+	project := manager.Configs.Projects[projectName]
+	queueConfig := project.Queues[queueName]
+	queueConfig.project = &project
+	return &queueConfig
+}
+
+func (manager *KnightConfigManager) SetProjectForName(projectName string, queueConfig QueueConfig) *QueueConfig {
+	manager.Lock.Lock()
+	defer manager.Lock.Unlock()
+	project := manager.Configs.Projects[projectName]
+	queueConfig.project = &project
+	return &queueConfig
 }
 
 // SaveQueuesConfig ...

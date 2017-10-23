@@ -296,6 +296,12 @@ func (mapping *RabbitKnightMapping) GetMansForProjectName(projectName string) ma
 	return mapping.Mapping[projectName]
 }
 
+func (mapping *RabbitKnightMapping) GetmanForName(projectName string, queueName string) *RabbitKnightMan {
+	mapping.Lock.RLock()
+	defer mapping.Lock.RUnlock()
+	return mapping.Mapping[projectName][queueName]
+}
+
 func (mapping *RabbitKnightMapping) SetManFormQueueConfig(queue *QueueConfig, man *RabbitKnightMan) {
 	mapping.Lock.Lock()
 	defer mapping.Lock.Unlock()

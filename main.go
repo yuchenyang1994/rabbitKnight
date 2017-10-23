@@ -22,6 +22,10 @@ var (
 	logFileName    = flag.String("log", "", "logging file, default STDOUT")
 )
 
+var AmqpConfig struct {
+	amqpConfig string
+}
+
 func main() {
 	flag.Parse()
 	hub := rabbit.NewKnightHub()
@@ -33,7 +37,7 @@ func main() {
 
 		log.SetOutput(f)
 	}
-	configManager := rabbit.NewKnightConfigManager(*configFilename)
+	configManager := rabbit.NewKnightConfigManager(*configFilename, *amqpConfig)
 	allQueueConfigs := configManager.LoadQueuesConfig()
 	rabbitManMaping := rabbit.NewRabbitKnightMapping()
 	doneHub := RunQueueKnight(hub, rabbitManMaping, allQueueConfigs)
