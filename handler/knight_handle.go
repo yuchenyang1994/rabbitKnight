@@ -28,11 +28,6 @@ type KnightForJson struct {
 	Status    bool   `json:"status"`
 }
 
-type KnightForRestart struct {
-	QueueName   string `json:"queueName"`
-	ProjectName string `json:"queueName"`
-}
-
 // GetKnightStatus ...
 func GetKnightStatus(knightMapping *rabbit.RabbitKnightMapping, r render.Render) {
 	knights := knightMapping.GetAllMans()
@@ -106,7 +101,8 @@ func CreateKnightForQueueName(doneHub *rabbit.KnightDoneHub, config *rabbit.Knig
 	r.JSON(200, map[string]string{"message": "fail"})
 }
 
-func CreateKnightForProject(req *http.Request, config *rabbit.KnightConfigManager, mapping *rabbit.RabbitKnightMapping, hub *rabbit.KnightHub, doneHub *rabbit.KnightDoneHub) {
+// CreateKnightForProject ...
+func CreateKnightForProject(req *http.Request, config *rabbit.KnightConfigManager, mapping *rabbit.RabbitKnightMapping, hub *rabbit.KnightHub, doneHub *rabbit.KnightDoneHub, r render.Render) {
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Fatal(err)
@@ -117,7 +113,8 @@ func CreateKnightForProject(req *http.Request, config *rabbit.KnightConfigManage
 		done := make(chan struct{}, 1)
 		doneHub.DoneMap[queueConfig.QueueName] = done
 		man := rabbit.NewRabbitKnightMan(queueConfig, config.AmqpConfig, hub)
+		go man.RunKnight(done)
 		mapping.SetManFormQueueConfig(queueConfig, man)
 	}
-
+	r.JSON(200, map[string]string{"message": "fail"})
 }

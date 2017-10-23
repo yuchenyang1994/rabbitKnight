@@ -2,9 +2,7 @@ package main
 
 import (
 	"flag"
-	"io"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"rabbitKnight/rabbit"
@@ -21,10 +19,6 @@ var (
 	configFilename = flag.String("queue_config", "./config/queue_config.yaml", "the queues config file")
 	logFileName    = flag.String("log", "", "logging file, default STDOUT")
 )
-
-var AmqpConfig struct {
-	amqpConfig string
-}
 
 func main() {
 	flag.Parse()
@@ -47,12 +41,9 @@ func main() {
 	server.Map(rabbitManMaping)
 	server.Map(configManager)
 	server.Map(doneHub)
+	router(server)
 	server.Run()
 	handleSignal(doneHub)
-}
-
-func HelloServer(w http.ResponseWriter, req *http.Request) {
-	io.WriteString(w, "hello, world!\n")
 }
 
 func RunQueueKnight(hub *rabbit.KnightHub, mapping *rabbit.RabbitKnightMapping, allQueueConfigs []*rabbit.QueueConfig) *rabbit.KnightDoneHub {
