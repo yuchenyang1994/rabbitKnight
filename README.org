@@ -1,18 +1,18 @@
 * The RabbitKnight
   #+CAPTION: This is the caption for the next figure link 
   #+NAME:   fig:SED-HR4049
-  [[[[http://i1.bvimg.com/607077/a695aa387c62106f.jpg]]]]
+  [[http://i1.bvimg.com/607077/a695aa387c62106f.jpg]]
 ** Introduction
    the RabbitKnight is a high performance callback center middleware for RabbitMQ based on [[https://github.com/fishtrip/watchman][watchman]]
 ** Future
-*** Easy to deploy
-*** A single queue of 3000 messages per second
-*** Downstream callback does not affect concurrent performance
-*** Automatic reconnection RabbitMQ
-*** Turn off without losing messages
-*** Support for JSONRPC AND RESTful calls
+   + Easy to deploy
+   + A single queue of 3000 messages per second
+   + Downstream callback does not affect concurrent performance
+   + Automatic reconnection RabbitMQ
+   + Turn off without losing messages
+   + Support for JSONRPC AND RESTful calls
 ** Usage
-*** Command
+   + Command
     #+BEGIN_QUOTE
     Usage of ./rabbitKnight:
     -log string
@@ -24,7 +24,7 @@
     -queue_config string
           the queues config file
     #+END_QUOTE
-*** Queue Config
+   + Queue Config
     #+BEGIN_QUOTE
     projects:
       test:
