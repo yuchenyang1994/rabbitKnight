@@ -1,0 +1,55 @@
+* The RabbitKnight
+  #+CAPTION: This is the caption for the next figure link 
+  #+NAME:   fig:SED-HR4049
+  [[[[http://i1.bvimg.com/607077/a695aa387c62106f.jpg]]]]
+** Introduction
+   the RabbitKnight is a high performance callback center middleware for RabbitMQ based on [[https://github.com/fishtrip/watchman][watchman]]
+** Future
+*** Easy to deploy
+*** A single queue of 3000 messages per second
+*** Downstream callback does not affect concurrent performance
+*** Automatic reconnection RabbitMQ
+*** Turn off without losing messages
+*** Support for JSONRPC AND RESTful calls
+** Usage
+*** Command
+    #+BEGIN_QUOTE
+    Usage of ./rabbitKnight:
+    -log string
+          logging file, default STDOUT
+    -mq string
+          rabbtmq URL (default "amqp://guest:guest@127.0.0.1:5672")
+    -port string
+          server port
+    -queue_config string
+          the queues config file
+    #+END_QUOTE
+*** Queue Config
+    #+BEGIN_QUOTE
+    projects:
+      test:
+        queuesDefault:
+          notifyBase: "http://localhost:5000"
+          notifyTimeout: 5
+          retryTimes: 3
+          retryDuration: 3
+          NotifyMethod: "API" or "RPC"
+        queues:
+          test:
+            // The value set here will override the default
+            queueName: test
+            notifyPath: "/test" 
+            bindingExchange: "test_exchange"
+            routingKey: ["test"]
+    #+END_QUOTE
+** Build
+   #+BEGIN_SRC sh
+     glide install
+     go build
+   #+END_SRC
+** TODOs
+*** []The Web management
+   
+    
+
+   
