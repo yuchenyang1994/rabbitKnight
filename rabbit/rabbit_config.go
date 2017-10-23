@@ -189,7 +189,7 @@ func (qc QueueConfig) DeclareQueue(channel *amqp.Channel) {
 func NewKnightConfigManager(configFileName string, amqp string) *KnightConfigManager {
 	once.Do(func() {
 		lock := sync.RWMutex{}
-		knightManager = &KnightConfigManager{ConfigFileName: configFileName, Lock: &lock, amqpConfig: amqp}
+		knightManager = &KnightConfigManager{ConfigFileName: configFileName, Lock: &lock, AmqpConfig: amqp}
 	})
 	return knightManager
 }
@@ -265,6 +265,30 @@ func (manager *KnightConfigManager) SaveQueuesConfig(config QueueConfig, project
 	project := manager.Configs.Projects[projectName]
 	project.Queues[queueName] = config
 	manager.Configs.Projects[projectName] = project
+	configs, err := yaml.Marshal(manager.Configs.Projects)
+	if err != nil {
+		log.Fatal(err)
+	}
+	file, err := os.OpenFile(manager.ConfigFileName, os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = file.WriteString(string(configs))
+	if err != nil {
+		log.Fatal(err)
+	}
+	file.Sync()
+}
+
+func (manager *KnightConfigManager) SaveAllQueues(jsonBody []byte) {
+	manager.Lock.Lock()
+	defer manager.Lock.Unlock()
+	projectsConfig := ProjectsConfig{}
+	projects := projectsConfig.Projects
+	json.Unmarshal(jsonBody, &projectsConfig)
+	for projectName, project := range projects {
+		manager.Configs.Projects[projectName] = project
+	}
 	configs, err := yaml.Marshal(manager.Configs.Projects)
 	if err != nil {
 		log.Fatal(err)

@@ -1,4 +1,4 @@
-package hander
+package handler
 
 import (
 	"net/http"
@@ -9,8 +9,6 @@ import (
 	"encoding/json"
 
 	"log"
-
-	"io/ioutil"
 
 	"github.com/go-martini/martini"
 	"github.com/martini-contrib/render"
@@ -114,12 +112,12 @@ func CreateKnightForProject(req *http.Request, config *rabbit.KnightConfigManage
 		log.Fatal(err)
 	}
 	allQueues := config.LoadQueuesForJSON(body)
+	config.SaveAllQueues(body)
 	for _, queueConfig := range allQueues {
 		done := make(chan struct{}, 1)
 		doneHub.DoneMap[queueConfig.QueueName] = done
 		man := rabbit.NewRabbitKnightMan(queueConfig, config.AmqpConfig, hub)
 		mapping.SetManFormQueueConfig(queueConfig, man)
-		go man.RunKnight(done)
 	}
 
 }
