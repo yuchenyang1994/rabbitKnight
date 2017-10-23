@@ -49,6 +49,8 @@
    #+END_SRC
 ** TODOs
 *** []The Web management
+** Licence
+   MIT Licence
    
     
 
