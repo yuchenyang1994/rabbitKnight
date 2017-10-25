@@ -9,7 +9,6 @@ import (
 func router(server *martini.ClassicMartini) {
 	server.Get("/knights", handler.GetKnightStatus)
 	server.Post("/knights", handler.CreateKnightForProject)
-
 	server.Get("/knights/:projectName", handler.GetKnightStatusByProjectName)
 	server.Delete("/knights/:projectName/:queueName", handler.StopKnightForQueueName)
 	server.Put("/knights/:projectName/:queueName", handler.StartKnightForQueueName)

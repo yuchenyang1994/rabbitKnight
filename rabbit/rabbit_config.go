@@ -33,7 +33,7 @@ type KnightConfigManager struct {
 
 type ProjectsConfig struct {
 	Projects map[string]ProjectConfig `yaml:"projects" json:"projects"`
-}
+
 
 // ProjectConfig list queue configs 批量配置时的配置文件
 type ProjectConfig struct {
