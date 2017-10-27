@@ -1,8 +1,10 @@
-hash: e09039990f3deac35c9ef49cc316bb609e498adbf42fdf9488650ff207cc2002
-updated: 2017-10-22T02:50:03.589072761+08:00
+hash: 6930dbca4365af99b44db4a07bd850f3d7f90e7dc1ea24c6d7e721e5e3b8bd0e
+updated: 2017-10-27T16:09:52.003637348+08:00
 imports:
 - name: github.com/codegangsta/inject
   version: 37d7f8432a3e684eef9b2edece76bdfa6ac85b39
+- name: github.com/gizak/termui
+  version: 24acd523c756fd9728824cdfac66aad9d8982fb7
 - name: github.com/go-martini/martini
   version: 49411a5b646861ad29a6ddd5351717a0a9c49b94
 - name: github.com/gorilla/websocket
@@ -13,6 +15,16 @@ imports:
   version: 1c35d901db3da928c72a72d8458480cc9ade058f
 - name: github.com/martini-contrib/render
   version: ec18f8345a1181146728238980606fb1d6f40e8c
+- name: github.com/maruel/panicparse
+  version: f6ee1e454807f72b84277a84fc06437081340a1b
+  subpackages:
+  - stack
+- name: github.com/mattn/go-runewidth
+  version: 9e777a8366cce605130a531d2cd6363d07ad7317
+- name: github.com/mitchellh/go-wordwrap
+  version: ad45545899c7b13c020ea92b2072220eefad42b8
+- name: github.com/nsf/termbox-go
+  version: 10cefba34bc5e7a6e5df0836a42513c28a10e074
 - name: github.com/oxtoacart/bpool
   version: 4e1c5567d7c2dd59fa4c7c83d34c2f3528b025d6
 - name: github.com/satori/go.uuid

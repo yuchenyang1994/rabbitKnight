@@ -16,3 +16,13 @@ import:
   version: ~1.0.0-rc1
 - package: github.com/martini-contrib/render
 - package: github.com/oxtoacart/bpool
+- package: github.com/gizak/termui
+  version: ~2.2.0
+- package: github.com/maruel/panicparse
+  version: ~1.0.1
+  subpackages:
+  - stack
+- package: github.com/mattn/go-runewidth
+  version: ~0.0.2
+- package: github.com/mitchellh/go-wordwrap
+- package: github.com/nsf/termbox-go
