@@ -1,6 +1,6 @@
 #+ATTR_HTML: :width 50%
 * The RabbitKnight
-  [[http://tu-img-1.aixinxi.net/o_1bttrkms81iug14v7i3u113n1165a.jpg]]
+  [[http://tu-img-1.aixinxi.net/o_1btts9v3c10bm14g91ja9123h1n18a.jpg]]
 ** Introduction
    RabbitKnight is a high performance callback center middleware for RabbitMQ based on [[https://github.com/fishtrip/watchman][watchman]]
 ** Features
