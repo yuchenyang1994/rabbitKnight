@@ -1,4 +1,5 @@
 #+ATTR_HTML: :width 50%
+[![996.icu](https://img.shields.io/badge/link-996.icu-red.svg)](https://996.icu)
 * The RabbitKnight
   [[http://tu-img-1.aixinxi.net/o_1btts9v3c10bm14g91ja9123h1n18a.jpg]]
 ** Introduction
